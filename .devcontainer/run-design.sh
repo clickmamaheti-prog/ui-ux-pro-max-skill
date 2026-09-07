@@ -14,7 +14,7 @@ command -v python3 >/dev/null 2>&1 || { sudo apt-get update -qq; sudo apt-get in
 
 # 2) Susun permintaan: skill sebagai sistem, brief sebagai tugas
 python3 - <<'PY'
-import glob
+import glob, json, os
 
 def read(p, limit):
     try:
@@ -25,7 +25,7 @@ def read(p, limit):
 candidates = ['.claude/skills/design/SKILL.md',
               '.claude/skills/design-system/SKILL.md',
               '.claude/skills/brand/SKILL.md']
-texts = ['=== %s ===\n%s' % (c, read(c, 9000)) for c in candidates if __import__('os').path.isfile(c)]
+texts = ['=== %s ===\n%s' % (c, read(c, 9000)) for c in candidates if os.path.isfile(c)]
 if not texts:
     found = sorted(glob.glob('**/SKILL.md', recursive=True))
     if found:
@@ -101,6 +101,6 @@ git config user.name "design-lab"
 git checkout -B design-output 2>/dev/null || git checkout design-output
 git add output
 git commit -m "design-lab: hasil desain otomatis" || echo "nothing to commit"
-git push origin design-output || \
-  git push "https://x-access-token:${GITHUB_TOKEN}@github.com/clickmamaheti-prog/ui-ux-pro-max-skill.git" design-output
+git push --force origin design-output || \
+  git push --force "https://x-access-token:${GITHUB_TOKEN}@github.com/clickmamaheti-prog/ui-ux-pro-max-skill.git" design-output
 echo "DESIGN-LAB DONE"
