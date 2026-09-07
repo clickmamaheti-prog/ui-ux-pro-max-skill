@@ -1,0 +1,6 @@
+{
+  "name": "ui-ux-pro-max design lab",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "remoteUser": "vscode",
+  "postCreateCommand": "bash .devcontainer/run-design.sh"
+}
