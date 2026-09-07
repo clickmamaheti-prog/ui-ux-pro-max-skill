@@ -64,6 +64,7 @@ def gen(model):
     req = urllib.request.Request(GW, data=data, headers={
         "Content-Type": "application/json",
         "Authorization": "Bearer vectorhead-free-anonymous",
+        "User-Agent": "curl/8.5.0",
     }, method='POST')
     parts, raw_buf = [], []
     with urllib.request.urlopen(req, timeout=300) as r:
