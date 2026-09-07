@@ -1,18 +1,17 @@
 #!/usr/bin/env bash
-# design-lab auto-runner
+# design-lab auto-runner (v2: fallback model + retry)
 # Alur: baca skill ui-ux-pro-max + brief -> panggil gateway vector (free tier,
 # TANPA kunci user) -> simpan hasil -> push ke branch design-output.
 # Codespace kemudian DIHAPUS dari luar; hasil tetap tersimpan di branch.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p output
-now() { date -u +%FT%TZ; }
-echo "{\"status\": \"running\", \"started\": \"$(now)\"}" > output/status.json
+echo "{\"status\": \"running\", \"started\": \"$(date -u +%FT%TZ)\"}" > output/status.json
 
 # 1) Instruksi skill: repo ini ADALAH skill-nya (sub-skill dipilih eksplisit)
 command -v python3 >/dev/null 2>&1 || { sudo apt-get update -qq; sudo apt-get install -y -qq python3 >/dev/null; }
 
-# 2) Susun permintaan: skill sebagai sistem, brief sebagai tugas
+# 2) Susun payload dasar: skill sebagai sistem, brief sebagai tugas
 python3 - <<'PY'
 import glob, json, os
 
@@ -34,9 +33,7 @@ if not texts:
         texts = [read('CLAUDE.md', 14000)]
 skill = '\n\n'.join(texts)[:14000]
 task = read('TASK.md', 5000)
-print('skill chars:', len(skill), '| task chars:', len(task))
 payload = {
-    "model": "glm-5.3-flash",
     "messages": [
         {"role": "system", "content":
             "Kamu desainer UI/UX profesional. Patuhi PANDUAN SKILL berikut secara ketat. "
@@ -46,33 +43,54 @@ payload = {
             task + "\n\nKeluarkan SATU file index.html lengkap (CSS/JS inline, responsif, "
                    "teks bahasa Indonesia). Hanya kode, tanpa penjelasan."}
     ],
-    "max_tokens": 16000,
+    "max_tokens": 12000,
     "temperature": 0.7
 }
-with open('/tmp/req.json', 'w', encoding='utf-8') as f:
+with open('/tmp/req_base.json', 'w', encoding='utf-8') as f:
     f.write(json.dumps(payload, ensure_ascii=False))
-print("request ready: skill=%s (%d chars), task=%d chars" % (
-    os.environ.get('SKILL_FILE', 'CLAUDE.md'), len(skill), len(task)))
+print('skill chars:', len(skill), '| task chars:', len(task))
 PY
 
-# 3) Panggil gateway vector (free tier — kunci provider ada di gateway, bukan di sini)
-HTTP=$(curl -s --max-time 280 -o /tmp/resp.json -w "%{http_code}" \
-  -X POST "https://vector-tui.methatech.eu.org/v1/chat/completions" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer vectorhead-free-anonymous" \
-  --data-binary @/tmp/req.json)
-echo "gateway HTTP $HTTP"
+# 3) Panggil gateway: coba model berurutan + retry (524/5xx/429 = coba lagi)
+GW="https://vector-tui.methatech.eu.org/v1/chat/completions"
+HTTP="000"; M="none"
+for M in mimo-v2.5 glm-5.3-flash hy3; do
+  for TRY in 1 2; do
+    python3 -c "import json; d=json.load(open('/tmp/req_base.json')); d['model']='$M'; json.dump(d, open('/tmp/req.json','w'), ensure_ascii=False)"
+    HTTP=$(curl -s --max-time 280 -o /tmp/resp.json -w "%{http_code}" \
+      -X POST "$GW" \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer vectorhead-free-anonymous" \
+      --data-binary @/tmp/req.json)
+    echo "model=$M attempt=$TRY -> HTTP $HTTP"
+    if [ "$HTTP" = "200" ]; then
+      OK=$(python3 - <<'PYC'
+import json
+try:
+    d = json.load(open('/tmp/resp.json'))
+    c = ((d.get('choices') or [{}])[0].get('message') or {}).get('content') or ''
+    print('yes' if len(c.strip()) > 100 else 'no')
+except Exception:
+    print('no')
+PYC
+)
+      [ "$OK" = "yes" ] && break 2
+    fi
+    sleep 8
+  done
+done
 
 # 4) Simpan hasil + status
-python3 - "$HTTP" <<'PY'
+python3 - "$HTTP" "$M" <<'PY'
 import json, sys, datetime
-http = sys.argv[1]
-status = {"http": http, "finished": datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')}
+http, model = sys.argv[1], sys.argv[2]
+status = {"http": http, "model": model,
+          "finished": datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')}
 try:
     with open('/tmp/resp.json', encoding='utf-8', errors='replace') as f:
         d = json.load(f)
     if http == '200':
-        txt = (d.get('choices') or [{}])[0].get('message', {}).get('content') or ''
+        txt = ((d.get('choices') or [{}])[0].get('message') or {}).get('content') or ''
         t = txt.strip()
         if t.startswith('```'):
             t = t.strip('`')
