@@ -1,12 +1,3 @@
-# Brief Desain (uji otomatis)
+# Brief Desain (job 1f8b302d)
 
-Buat landing page satu file HTML untuk **Kopi Nusantara** — merek kopi lokal Indonesia.
-
-Ketentuan:
-- Nuansa warna cokelat tua + krem, terasa hangat dan premium.
-- Hero: headline kuat + subheadline + tombol CTA utama.
-- Bagian menu: 6 item kopi dengan harga (format Rupiah).
-- Testimoni: 3 pelanggan.
-- Footer sederhana: alamat, jam buka, Instagram.
-- Gaya: modern, bersih, tipografi rapi — TIDAK boleh terlihat seperti template AI generik.
-- Responsif (mobile → desktop). Semua teks bahasa Indonesia.
+Create a modern, clean single-page landing page for a fictional SaaS product called "TaskFlow" - a task management tool. Include: hero section with headline and CTA button, features section with 3 feature cards, pricing section with 3 tiers, and footer. Use blue and white color scheme. Save as index.html in the project root.
