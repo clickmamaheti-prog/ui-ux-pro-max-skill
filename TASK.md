@@ -1,12 +1,9 @@
-# Brief Desain (uji otomatis)
+# Brief Desain (job 54a0e288)
 
-Buat landing page satu file HTML untuk **Kopi Nusantara** — merek kopi lokal Indonesia.
-
-Ketentuan:
-- Nuansa warna cokelat tua + krem, terasa hangat dan premium.
-- Hero: headline kuat + subheadline + tombol CTA utama.
-- Bagian menu: 6 item kopi dengan harga (format Rupiah).
-- Testimoni: 3 pelanggan.
-- Footer sederhana: alamat, jam buka, Instagram.
-- Gaya: modern, bersih, tipografi rapi — TIDAK boleh terlihat seperti template AI generik.
-- Responsif (mobile → desktop). Semua teks bahasa Indonesia.
+Create a modern, sleek landing page for "VectorHead" - an AI coding agent CLI/TUI tool. The landing page should:
+- Hero section: Bold headline "VectorHead — AI Coding Agent di Terminal", subheadline about autonomous code editing, searching, building and testing
+- Features section: 3-4 feature cards (Autonomous Agent, TUI ANSI, Multi-Provider AI, Zero Runtime Deps)
+- Call to action: npm install command
+- Footer with version info
+- Color scheme: dark theme with cyan/teal accents
+- Clean, minimal, developer-focused aesthetic
